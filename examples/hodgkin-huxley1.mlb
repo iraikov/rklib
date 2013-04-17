@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	hodgkin-huxley1.sml
+in
+	structure HodgkinHuxley1
+end
+
+

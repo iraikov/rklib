@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	lotka-volterra1.sml
+in
+	structure LotkaVolterra1
+end
+
+

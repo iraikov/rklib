@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	morris-lecar2.sml
+in
+	structure MorrisLecar2
+end
+
+
