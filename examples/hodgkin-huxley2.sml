@@ -75,7 +75,7 @@ val initial = (~65.0, 0.052, 0.596, 0.317)
 		  
 
 
-val step = 0.01
+val step = 1.0
 
 val rkdp: HHState stepper2 = make_rkdp()
 fun make_stepper (params) = rkdp (scaler,summer,deriv params)
@@ -117,26 +117,32 @@ fun showst  (t,(v,m,h,n)) = String.concat [(showReal t), " ", (showReal v) , " "
 
 fun solver (tmax,stepper) (h,t,st) =
   let open Real
+
       val hf = tmax - t
       val hs = if hf > h then h else hf
-      val (tn, stn, etn) = stepper hs (t,st)
+      val (stn, etn) = stepper hs (t,st)
 
-      fun shs (pre, h) = TextIO.output (TextIO.stdErr, (pre ^ "creasing step to " ^ (showReal h) ^ "\n"))
-      fun shnil () = TextIO.output (TextIO.stdErr, "")
+      fun shs (pre, h) = TextIO.output (TextIO.stdErr, ("# " ^ pre ^ "creasing step to " ^ (showReal h) ^ "\n"))
+
   in
       if hs < 1.0 andalso Real.== (hs, hf)
-      then (putStrLn (showst (tn, stn)); putStrLn "# All done!"; (tn, stn))
+      then (putStrLn (showst (tmax, stn)); putStrLn "# All done!"; (tmax, stn))
       else
 	  case predictor (h,etn) of
               Left bad => (shs ("de", bad); solver (tmax,stepper) (bad,t,st))
-	    | Right good => ((if good > h
-			      then shs ("in", good)
-			      else shnil());
-			     putStrLn (showst (t,st));
-			     solver (tmax,stepper) (good,tn,stn))
+	    | Right good => 
+              let 
+                  val tn = t + hs
+              in
+                  ((if good > h
+		    then shs ("in", good)
+		    else ());
+	           putStrLn (showst (t,st));
+	           solver (tmax,stepper) (good,tn,stn))
+              end
   end
 
 
-val (tn,_) = solver (100.0,make_stepper hh52) (step,0.0,initial)
+val (tn,_) = solver (1000.0,make_stepper hh52) (step,0.0,initial)
 
 end

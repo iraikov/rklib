@@ -66,9 +66,9 @@ fun deriv {Istim, vk,vl,vca,gk,gl,gca,c,v1,v2,v3,v4,phi}
 	  (lamw v) * ((winf v) - w) )
     end
 
-val initial = (~60.899,0.0149)
+val initial: MLState = (~60.899,0.0149)
 
-val step = 0.01
+val step = 1.0
 
 (*
 val rkf45: MLState stepper2 = make_rkf45()
@@ -77,9 +77,7 @@ fun make_stepper (params) = rkf45 (scaler,summer,deriv params)
 
 val rkdp: MLState stepper2 = make_rkdp()
 fun make_stepper (params) = rkdp (scaler,summer,deriv params)
-
-datatype ('a, 'b) either = Left of 'a
-			 | Right of 'b
+datatype ('a, 'b) either = Left of 'a | Right of 'b
 
 val tol = Real.Math.pow (10.0, ~12.0)
 val lb = 0.5 * tol
@@ -89,11 +87,12 @@ val ub = 1.0 * tol
 fun predictor (h,(v,w)) =
   let open Real
       val e = (abs v) + (abs w)
-  in if e < lb 
-        then Right (1.414*h)		(* step too small, accept but grow *)
-        else if e < ub 
-             then Right h		(* step just right *)
-             else Left (0.5*h)		(* step too large, reject and shrink *)
+  in 
+      if e < lb 
+      then Right (1.414*h)		(* step too small, accept but grow *)
+      else (if e < ub 
+            then Right h		(* step just right *)
+            else Left (0.5*h))		(* step too large, reject and shrink *)
   end
 
 fun putStrLn str =
@@ -114,27 +113,37 @@ fun showst (t, (y1, y2)) = String.concat [(showReal t), " ", (showReal y1) , " "
 
 fun solver (tmax,stepper) (h,t,st) =
   let open Real
+
       val hf = tmax - t
       val hs = if hf > h then h else hf
-      val (tn, stn, etn) = stepper hs (t,st)
+      val (stn, etn) = stepper hs (t,st)
 
-      fun shs (pre, h) = TextIO.output (TextIO.stdErr, (pre ^ "creasing step to " ^ (showReal h) ^ "\n"))
-      fun shnil () = TextIO.output (TextIO.stdErr, "")
+      fun shs (pre, h) = TextIO.output (TextIO.stdErr, ("# " ^ pre ^ "creasing step to " ^ (showReal h) ^ "\n"))
+
   in
       if hs < 1.0 andalso Real.== (hs, hf)
-      then (putStrLn (showst (tn, stn)); putStrLn "# All done!"; (tn, stn))
+      then (putStrLn (showst (tmax, stn)); putStrLn "# All done!"; (tmax, stn))
       else
 	  case predictor (h,etn) of
               Left bad => (shs ("de", bad); solver (tmax,stepper) (bad,t,st))
-	    | Right good => ((if good > h
-			      then shs ("in", good)
-			      else shnil());
-			     putStrLn (showst (t,st));
-			     solver (tmax,stepper) (good,tn,stn))
+	    | Right good => 
+              let 
+                  val tn = t + hs
+              in
+                  ((if good > h
+		    then shs ("in", good)
+		    else ());
+	           putStrLn (showst (t,st));
+	           solver (tmax,stepper) (good,tn,stn))
+              end
   end
 
+val t1 = 500.0
+val t2 = 1000.0
 
-val (tn,_) = solver (50.0,make_stepper type1) (step,0.0,initial)
-val _ = solver (100.0,make_stepper type2) (step,tn,initial)
+val stepper1 = make_stepper type1
+val stepper2 = make_stepper type2
+val (tn,_) = solver (t1,stepper1) (step,0.0,initial)
+(*val _      = solver (t2,stepper2) (step,tn,initial)*)
 
 end
