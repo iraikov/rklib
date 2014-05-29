@@ -83,8 +83,8 @@ val tol = Real.Math.pow (10.0, ~12.0)
 val lb = 0.5 * tol
 val ub = 1.0 * tol
 
-(* predictor :: real -> MLState ->  real real either *)
-fun predictor (h,(v,w)) =
+(* predictor :: real -> real * MLState ->  real real either *)
+fun predictor tol (h,(v,w)) =
   let open Real
       val e = (abs v) + (abs w)
   in 
@@ -124,7 +124,7 @@ fun solver (tmax,stepper) (h,t,st) =
       if hs < 1.0 andalso Real.== (hs, hf)
       then (putStrLn (showst (tmax, stn)); putStrLn "# All done!"; (tmax, stn))
       else
-	  case predictor (h,etn) of
+	  case predictor tol (h,etn) of
               Left bad => (shs ("de", bad); solver (tmax,stepper) (bad,t,st))
 	    | Right good => 
               let 

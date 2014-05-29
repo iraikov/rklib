@@ -88,7 +88,7 @@ val lb = 0.5 * tol
 val ub = 1.0 * tol
 
 (* predictor :: real -> HHState ->  real real either *)
-fun predictor (step,(v,m,h,n)) =
+fun predictor tol (step,(v,m,h,n)) =
   let open Real
       val e = (abs v) + (abs m) + (abs h) + (abs n)
   in if e < lb 
@@ -128,7 +128,7 @@ fun solver (tmax,stepper) (h,t,st) =
       if hs < 1.0 andalso Real.== (hs, hf)
       then (putStrLn (showst (tmax, stn)); putStrLn "# All done!"; (tmax, stn))
       else
-	  case predictor (h,etn) of
+	  case predictor tol (h,etn) of
               Left bad => (shs ("de", bad); solver (tmax,stepper) (bad,t,st))
 	    | Right good => 
               let 
