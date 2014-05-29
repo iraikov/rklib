@@ -83,9 +83,9 @@ fun make_stepper (params) = rkdp (scaler,summer,deriv params)
 datatype ('a, 'b) either = Left of 'a
 			 | Right of 'b
 
-val tol = Real.Math.pow (10.0, ~12.0)
-val lb = 0.5 * tol
-val ub = 1.0 * tol
+val tol = Real.Math.pow (10.0, ~6.0)
+val lb  = 0.5 * tol
+val ub  = 1.0 * tol
 
 (* predictor :: real -> HHState ->  real real either *)
 fun predictor tol (step,(v,m,h,n)) =

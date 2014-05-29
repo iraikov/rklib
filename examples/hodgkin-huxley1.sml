@@ -98,14 +98,14 @@ fun showst  (t,(v,m,h,n)) = String.concat [(showReal t), " ", (showReal v) , " "
 					   (showReal h) , " ", (showReal n)]
 
 fun solver (tmax,stepper) (t,st) =
-  let val (tn,stn) = stepper step (t,st)
+  let val stn = stepper step (t,st)
   in putStrLn (showst (t,st));
      if t > tmax
-     then (putStrLn "# All done!"; (tn,stn))
-     else solver (tmax,stepper) (tn,stn)
+     then (putStrLn "# All done!"; (t,stn))
+     else solver (tmax,stepper) (t+step,stn)
   end
 
 
-val (tn,_) = solver (100.0,make_stepper hh52) (0.0,initial)
+val (tn,_) = solver (1000.0,make_stepper hh52) (0.0,initial)
 
 end
