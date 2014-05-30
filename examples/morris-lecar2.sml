@@ -56,13 +56,12 @@ val initial: MLState = (~60.899,0.0149)
 
 val step = 0.01
 
-(*
-val rkf45: MLState stepper2 = make_rkf45()
-fun make_stepper (params) = rkf45 (scaler,summer,deriv params)
-*)
-
 val rkdp: MLState stepper2 = make_rkdp()
+val rkf45: MLState stepper2 = make_rkf45()
+val rkf78: MLState stepper2 = make_rkf78()
+
 fun make_stepper (params) = rkdp (scaler,summer,deriv params)
+
 datatype ('a, 'b) either = Left of 'a | Right of 'b
 
 val tol = Real.Math.pow (10.0, ~6.0)
