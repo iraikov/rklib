@@ -513,4 +513,29 @@ fun make_rkf78_aux (): 'a stepper1 = core1 (cs_f78, as_f78, bs_f78_aux)
 val show_rkf78_aux = rk_show1 ("Fehlberg (8)", cs_f78, as_f78, bs_f78_aux)
 
 
+(* Verner, order 6/5 DVERK *)
+
+val cs_v65 = ratToReals [RAT 0, 1//6, 4//15, 2//3, 5//6, RAT 1, RAT 115, RAT 1]
+val as_v65 = ratToRCLs
+                 [[],
+                  [1//6],
+                  [4//75, 16//75],
+                  [5//6, ~8//3, 5//2],
+                  [~165//64, 55//6, ~425//64, 85//96],
+                  [12//5, RAT ~8, 4015//612, ~11//36, 88//255],
+                  [~8263//15000, 124//75, ~643//680, ~81//250, 2484//10625],
+                  [3501//1720, ~300//43, 297275//52632, ~319//2322, 24068//84065, RAT 0, 3850//26703]]
+(* sixth-order coeffs *)
+val r1_v65 = [3//40, RAT 0, 875//2244, 23//72, 264//1955, RAT 0, 125//11592, 43//616]
+(* fifth-order coeffs *)
+val r2_v65 = [13//160, RAT 0, 2375//5984, 5//16, 12//85, 3//44]
+val bs_v65 = ratToRCL r1_v65
+val ds_v65 = ratToRCL (diffs (r1_v65, r2_v65))
+fun make_rkv65 (): 'a stepper2 = core2 (cs_v65, as_v65, bs_v65, ds_v65)
+val show_rkv65 = rk_show2 ("Verner 6(5) \"DVERK\"", cs_v65, as_v65, bs_v65, ds_v65)
+
+val bs_v65_aux = ratToRCL r2_v65
+fun make_rkv65_aux (): 'a stepper1 = core1 (cs_v65, as_v65, bs_v65_aux)
+val show_rkv65_aux = rk_show1 ("Verner (5)", cs_v65, as_v65, bs_v65_aux)
+
 end
