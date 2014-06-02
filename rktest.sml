@@ -93,6 +93,34 @@ fun solver2 (integrator,stats) =
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
 
+fun gen_soln3 (integrator,h,t,st) =
+  let 
+      val (stn,en,inp) = integrator (t,st)
+      val tn       = Real.+(t,h)
+  in 
+      if t >= 5.0
+      then (putStr (showst (tn,stn));
+            putStrLn ("\t" ^ (showReal (inp 1.0))))
+      else gen_soln3 (integrator,h,tn,stn)
+  end
+
+fun do_case3 integrator n =
+  let 
+      val h = if n < 0 then Real.Math.pow (2.0,Real.fromInt (~n)) 
+	      else Real.Math.pow (0.5,Real.fromInt n)
+      val sep = if n <= 4 then "\t\t" else "\t"
+  in
+      putStr (String.concat [(showReal h), sep]);
+      gen_soln3 (integrator h,h,t0,y0)
+  end
+
+fun solver3 (integrator,stats) =
+  (putStrLn stats;
+   putStrLn "# step yf uf err";
+   List.app (do_case3 (integrator (scaler,summer,deriv)))
+	    (List.tabulate (15, fn x => x - 2));
+   putStrLn "# All done!\n")
+
 
 val rkfe: real stepper1 = make_rkfe()
 val rk3:  real stepper1 = make_rk3()
@@ -117,6 +145,7 @@ val rkdpb_aux:  real stepper1 = make_rkdpb_aux()
 val rkf78_aux: real stepper1 = make_rkf78_aux()
 val rkv65_aux: real stepper1 = make_rkv65_aux()
 
+val cerkdp:  real stepper3 = make_cerkdp()
 
 
 fun run() =
@@ -134,6 +163,8 @@ fun run() =
                     (rkdpb, show_rkdpb),
                     (rkf78, show_rkf78),
                     (rkv65, show_rkv65)];
+  putStrLn "#### Continuous Solvers";
+  List.app solver3 [(cerkdp, show_cerkdp)];
   putStrLn "#### Auxiliary Solvers: Error Estimators from Adaptives";
   List.app solver1 [(rkhe_aux, show_rkhe_aux),
 		    (rkbs_aux, show_rkbs_aux),

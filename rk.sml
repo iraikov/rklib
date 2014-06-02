@@ -294,8 +294,71 @@ fun core2 (cl: real list, al: RCL list, bl: RCL, dl: RCL)
       (sum_fn (yn, ksum (bl, ks)), ksum (dl, ks))
   end
 
-(* Helper routines to show the internal tables *)
 
+
+(* Helper function to sum a list of b_i (theta) K_i *)
+
+fun bk_sum (bs: RCL list)
+           (sc_fn: real * 'a -> 'a, sum_fn: 'a * 'a -> 'a) 
+           (ks: 'a list, h: real)
+           (theta: real) = 
+    let fun m_scale (s,v) =
+	    (if Real.compare(s,0.0) = EQUAL then NONE
+	     else (if Real.compare(s,1.0) = EQUAL then SOME v
+		   else SOME (sc_fn (s,v))))
+
+        fun recur ((d,ns)::bs, k::ks, fs) =
+            let
+                val (bsum,_) = foldl (fn (n,(sum,theta)) => 
+                                         ((n*theta)+sum,theta*theta)) (0.0,theta) ns
+            in
+                case m_scale (bsum, k) of 
+                    SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
+                  | NONE => recur (bs, ks, fs)
+            end
+          | recur ([], [k], fs) = foldl1 sum_fn fs
+          | recur (_, _, _) = raise InvalidCoefficients
+    in
+        recur (bs, ks, [])
+    end
+    
+
+(* Interpolation routine for continuous explicit RK (CERK) methods *)
+fun interp (ws: RCL list)
+           (sc_fn: real * 'a -> 'a, 
+	    sum_fn: 'a * 'a -> 'a)
+           (ks: 'a list, h: real)
+	   (tn,yn: 'a) (theta: real) = 
+    sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)
+
+
+(* Core routine for constructing continuous methods.  It returns a
+   triple (ynew,enew,interp), where interp is the interpolation
+   function for this timestep.
+*)
+
+type 'a stepper3 =  ((real * 'a -> 'a) * 
+		     ('a * 'a -> 'a)   *
+		     (real * 'a -> 'a)) ->
+		    (real -> (real * 'a) -> ('a * 'a * (real -> 'a)))
+
+fun core3 (cl: real list, al: RCL list, bl: RCL, dl: RCL, wl: RCL list) 
+	  (sc_fn: real * 'a -> 'a, 
+	   sum_fn: 'a * 'a -> 'a,
+	   der_fn: real * 'a -> 'a)
+	   (h: real)
+	   (old as (tn,yn: 'a)) =
+  let
+      val interp'   = interp wl (sc_fn,sum_fn)
+      val ksum      = k_sum (sc_fn,sum_fn,h)
+      val ks        = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
+  in
+      (sum_fn (yn, ksum (bl, ks)),
+       ksum (dl, ks),
+       interp' (ks, h) (tn,yn))
+  end
+
+(* Helper routines to show the internal tables *)
 
 fun rcl_show (d,ns) =
     "<" ^ (Real.toString d) ^ ", " ^ (def_list_show Real.toString ns) ^ ">"
@@ -308,6 +371,13 @@ fun rk_show1 (title,cs,ar: RCL list,bs) =
 
 fun rk_show2 (title,cs,ar: RCL list,bs,ds) =
     title ^ ":\nds:\t" ^ (rcl_show ds) ^ 
+    "\ncs:\t" ^ ((def_list_show Real.toString) cs) ^
+    "\nbs:\t" ^ (rcl_show bs) ^ 
+    "\nas:\t" ^ (list_show (rcl_show,"\n\t","","") ar) 
+
+fun rk_show3 (title,cs,ar: RCL list,bs,ds,ws) =
+    title ^ ":ws:\t" ^ (list_show (rcl_show,"\n\t","","") ws) ^
+    "\nds:\t" ^ (rcl_show ds) ^ 
     "\ncs:\t" ^ ((def_list_show Real.toString) cs) ^
     "\nbs:\t" ^ (rcl_show bs) ^ 
     "\nas:\t" ^ (list_show (rcl_show,"\n\t","","") ar) 
@@ -465,6 +535,18 @@ val r1_dp = [35//384, RAT 0, 500//1113, 125//192, ~2187//6784, 11//84]
 val r2_dp = [5179//57600, RAT 0, 7571//16695, 393//640, ~92097//339200, 187//2100, 1//40]
 val bs_dp = ratToRCL r1_dp
 val ds_dp = ratToRCL (diffs (r1_dp, r2_dp))
+(* interpolation coeffs for continuous method *)
+val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
+                       [],
+                       [RAT 0, 4216//1113, ~18728//3339, 7580//3339],
+                       [RAT 0, ~27//16, 9//2, ~415//192],
+                       [RAT 0, ~2187//8480, 2673//2120, ~8991//6784],
+                       [RAT 0, 33//35, ~319//105, 187//84]]
+                                                         
+
+fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
+val show_cerkdp = rk_show3 ("Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
+
 fun make_rkdp (): 'a stepper2  = core2 (cs_dp, as_dp, bs_dp, ds_dp)
 val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp, ds_dp)
 
