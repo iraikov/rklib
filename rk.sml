@@ -55,6 +55,7 @@ struct
   rkf45, show_rkf45, rkf45_aux, show_rkf45_aux,
   rkck, show_rkck, rkck_aux, show_rkck_aux,
   rkdp, show_rkdp, rkdp_aux, show_rkdp_aux,
+  rkdpb, show_rkdpb, rkdpb_aux, show_rkdpb_aux,
   rkf78, show_rkf78, rkf78_aux, show_rkf78_aux,
   rkv65, show_rkv65, rkv65_aux, show_rkv65_aux)
 *)
@@ -470,6 +471,33 @@ val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp,
 val bs_dp_aux = ratToRCL r2_dp
 fun make_rkdp_aux (): 'a stepper1 = core1 (cs_dp, as_dp, bs_dp_aux)
 val show_rkdp_aux = rk_show1 ("Dormand-Prince (4)", cs_dp, as_dp, bs_dp_aux)
+
+
+(* Alternative coefficients for Dormand-Prince, from Butcher p. 195.
+   "Although this has larger error constants overall ... it has the
+   advantage of a longer stability interval [than DOPRI5]."
+*)
+
+val cs_dpb = ratToReals [RAT 0, 2//9, 1//3, 5//9, 2//3, RAT 1, RAT 1]
+val as_dpb = ratToRCLs [[],
+                        [2//9],
+                        [1//12, 1//4],
+                        [55//324, ~25//108, 50//81],
+                        [83//330, ~13//22, 61//66, 9//110],
+                        [~19//28, 9//4, 1//7, ~27//7, 22//7],
+                        [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]]
+(* fifth-order coeffs *)
+val r1_dpb = [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]
+(* fourth-order coeffs *)
+val r2_dpb = [431//5000, RAT 0, 333//500, ~7857//10000, 957//1000, 193//2000, ~1//50]
+val bs_dpb = ratToRCL r1_dpb
+val ds_dpb = ratToRCL (diffs (r1_dpb, r2_dpb))
+fun make_rkdpb (): 'a stepper2  = core2 (cs_dpb, as_dpb, bs_dpb, ds_dpb)
+val show_rkdpb = rk_show2 ("Dormand-Prince 5(4) B", cs_dpb, as_dpb, bs_dpb, ds_dpb)
+
+val bs_dpb_aux = ratToRCL r2_dpb
+fun make_rkdpb_aux (): 'a stepper1 = core1 (cs_dpb, as_dpb, bs_dpb_aux)
+val show_rkdpb_aux = rk_show1 ("Dormand-Prince (4) B", cs_dpb, as_dpb, bs_dpb_aux)
 
 (*
    Fehlberg, order 7/8: "... of frequent use in all high precision

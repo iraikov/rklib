@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	izhfs1.sml
+in
+	structure IzhikevichFS1
+end
+
+
