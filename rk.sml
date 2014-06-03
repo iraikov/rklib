@@ -29,6 +29,9 @@
  * adaptive solvers:
  *	rkhe, rkbs, rkf45, rkck, rkdp, rkf78, rkv65
  *
+ * adaptive solvers with interpolation (CERK):
+ *	cerkdp
+ *
  * auxiliary non-adaptive solvers (error estimators from the adaptive ones):
  *	rkhe_aux, rkbs_aux, rkf45_aux, rkck_aux, rkdp_aux, rkf78_aux, rkv65_aux
  *
@@ -46,19 +49,6 @@
 structure RungeKutta =
 struct
 
-
-(*
-  rkfe, show_rkfe, rk3, show_rk3,
-  rk4a, show_rk4a, rk4b, show_rk4b,
-  rkhe, show_rkhe, rkhe_aux, show_rkhe_aux,
-  rkbs, show_rkbs, rkbs_aux, show_rkbs_aux,
-  rkf45, show_rkf45, rkf45_aux, show_rkf45_aux,
-  rkck, show_rkck, rkck_aux, show_rkck_aux,
-  rkdp, show_rkdp, rkdp_aux, show_rkdp_aux,
-  rkdpb, show_rkdpb, rkdpb_aux, show_rkdpb_aux,
-  rkf78, show_rkf78, rkf78_aux, show_rkf78_aux,
-  rkv65, show_rkv65, rkv65_aux, show_rkv65_aux)
-*)
 
 exception InsufficientArguments
 exception InvalidCoefficients
