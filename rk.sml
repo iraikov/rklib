@@ -27,16 +27,17 @@
  *	rkfe, rk3, rk4a, rk4b
  *
  * adaptive solvers:
- *	rkhe, rkbs, rkf45, rkck, rkdp, rkf78, rkv65
+ *	rkhe, rkbs, rkf45, rkck, rkdp, rkdpb, rkf78, rkv65
  *
  * adaptive solvers with interpolation (CERK):
  *	cerkdp
  *
  * auxiliary non-adaptive solvers (error estimators from the adaptive ones):
- *	rkhe_aux, rkbs_aux, rkf45_aux, rkck_aux, rkdp_aux, rkf78_aux, rkv65_aux
+ *	rkhe_aux, rkbs_aux, rkf45_aux, rkck_aux, rkdp_aux, rkdpb_aux, 
+ *      rkf78_aux, rkv65_aux
  *
- * use rk4[ab] if you don't need an adaptive solver, rkdp or rkv65 if you do;
- * or use what you need if you're an expert.
+ * use rk4[ab] if you don't need an adaptive solver, rkdp or rkv65 if
+ * you do; or use what you need if you're an expert.
  *
  * DO NOT USE rkfe EXCEPT FOR DEMONSTRATIONS OF INSTABILITY!
  * (Or if you're an expert.)
@@ -461,6 +462,25 @@ val bs_bs_aux = ratToRCL r2_bs
 fun make_rkbs_aux (): 'a stepper1 = core1 (cs_bs, as_bs, bs_bs_aux)
 val show_rkbs_aux = rk_show1 ("Bogacki-Shampine (2)", cs_bs, as_bs, bs_bs_aux)
 
+(* Runge-Kutta-Norsett, order 3/4 *)
+
+val cs_rkn34 = ratToReals [RAT 0, 3//8, 9//16, 25//32, RAT 1]
+val as_rkn34 = ratToRCLs [[], 
+                          [3//8], 
+                          [RAT 0, 9//16], 
+                          [~125//672, 325//336],
+                          [371//891, ~200//297, 1120//891]]
+val r1_rkn34 = [37//225, 44//117, RAT 0, 448//975] (* third-order coeffs *)
+val r2_rkn34 = [25//162, 32//135, 256//567, RAT 0, 11//70] (* second-order coeffs *)
+val bs_rkn34 = ratToRCL r1_rkn34
+val ds_rkn34 = ratToRCL (diffs (r1_rkn34, r2_rkn34))
+fun make_rkn34 (): 'a stepper2 = core2 (cs_rkn34, as_rkn34, bs_rkn34, ds_rkn34)
+val show_rkn34 = rk_show2 ("Runge-Kutta-Norsett 3(4)", cs_rkn34, as_rkn34, bs_rkn34, ds_rkn34)
+
+val bs_rkn34_aux = ratToRCL r2_rkn34
+fun make_rkn34_aux (): 'a stepper1 = core1 (cs_rkn34, as_rkn34, bs_rkn34_aux)
+val show_rkn34_aux = rk_show1 ("Runge-Kutta-Norsett (4)", cs_rkn34, as_rkn34, bs_rkn34_aux)
+
 (* Runge-Kutta-Fehlberg, order 4/5 *)
 
 val cs_rkf = ratToReals [RAT 0, 1//4, 3//8, 12//13, RAT 1, 1//2]
@@ -535,7 +555,7 @@ val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
                                                          
 
 fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
-val show_cerkdp = rk_show3 ("Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
+val show_cerkdp = rk_show3 ("Continuous Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
 
 fun make_rkdp (): 'a stepper2  = core2 (cs_dp, as_dp, bs_dp, ds_dp)
 val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp, ds_dp)
@@ -613,7 +633,7 @@ fun make_rkf78_aux (): 'a stepper1 = core1 (cs_f78, as_f78, bs_f78_aux)
 val show_rkf78_aux = rk_show1 ("Fehlberg (8)", cs_f78, as_f78, bs_f78_aux)
 
 
-(* Verner, order 6/5 DVERK *)
+(* Verner, order 6/5 (DVERK) *)
 
 val cs_v65 = ratToReals [RAT 0, 1//6, 4//15, 2//3, 5//6, RAT 1, RAT 115, RAT 1]
 val as_v65 = ratToRCLs
@@ -631,6 +651,7 @@ val r1_v65 = [3//40, RAT 0, 875//2244, 23//72, 264//1955, RAT 0, 125//11592, 43/
 val r2_v65 = [13//160, RAT 0, 2375//5984, 5//16, 12//85, 3//44]
 val bs_v65 = ratToRCL r1_v65
 val ds_v65 = ratToRCL (diffs (r1_v65, r2_v65))
+
 fun make_rkv65 (): 'a stepper2 = core2 (cs_v65, as_v65, bs_v65, ds_v65)
 val show_rkv65 = rk_show2 ("Verner 6(5) \"DVERK\"", cs_v65, as_v65, bs_v65, ds_v65)
 
