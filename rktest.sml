@@ -127,23 +127,25 @@ val rk3:  real stepper1 = make_rk3()
 val rk4a: real stepper1 = make_rk4a()
 val rk4b: real stepper1 = make_rk4b()
 
-val rkhe:  real stepper2  = make_rkhe()
-val rkbs:  real stepper2  = make_rkbs()
+val rkhe:  real stepper2 = make_rkhe()
+val rkbs:  real stepper2 = make_rkbs()
+val rkn34: real stepper2 = make_rkn34()
 val rkf45: real stepper2 = make_rkf45()
 val rkck:  real stepper2 = make_rkck()
 val rkdp:  real stepper2 = make_rkdp()
-val rkdpb:  real stepper2 = make_rkdpb()
+val rkdpb: real stepper2 = make_rkdpb()
 val rkf78: real stepper2 = make_rkf78()
 val rkv65: real stepper2 = make_rkv65()
 
 val rkhe_aux:  real stepper1  = make_rkhe_aux()
 val rkbs_aux:  real stepper1  = make_rkbs_aux()
-val rkf45_aux: real stepper1 = make_rkf45_aux()
-val rkck_aux:  real stepper1 = make_rkck_aux()
-val rkdp_aux:  real stepper1 = make_rkdp_aux()
+val rkn34_aux: real stepper1  = make_rkn34_aux()
+val rkf45_aux: real stepper1  = make_rkf45_aux()
+val rkck_aux:  real stepper1  = make_rkck_aux()
+val rkdp_aux:  real stepper1  = make_rkdp_aux()
 val rkdpb_aux:  real stepper1 = make_rkdpb_aux()
-val rkf78_aux: real stepper1 = make_rkf78_aux()
-val rkv65_aux: real stepper1 = make_rkv65_aux()
+val rkf78_aux: real stepper1  = make_rkf78_aux()
+val rkv65_aux: real stepper1  = make_rkv65_aux()
 
 val cerkdp:  real stepper3 = make_cerkdp()
 
@@ -157,6 +159,7 @@ fun run() =
   putStrLn "#### Adaptive Solvers";
   List.app solver2 [(rkhe, show_rkhe),
                     (rkbs, show_rkbs),
+                    (rkn34, show_rkn34),
                     (rkf45, show_rkf45),
                     (rkck, show_rkck),
                     (rkdp, show_rkdp),
@@ -168,6 +171,7 @@ fun run() =
   putStrLn "#### Auxiliary Solvers: Error Estimators from Adaptives";
   List.app solver1 [(rkhe_aux, show_rkhe_aux),
 		    (rkbs_aux, show_rkbs_aux),
+		    (rkn34_aux, show_rkn34_aux),
 		    (rkf45_aux, show_rkf45_aux),
 		    (rkck_aux, show_rkck_aux),
 		    (rkdp_aux, show_rkdp_aux),
