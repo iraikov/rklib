@@ -42,7 +42,7 @@ fun deriv {Vpeak,k,Vt,Vr,Vb,Cm,a,b,c,I}
          (a * ((UU v) - u)))
     end
 
-fun driver tstep
+fun solver tstep
            {Vpeak,k,Vt,Vr,Vb,Cm,a,b,c,I}
 	   t 
            (v,u) =
@@ -82,17 +82,17 @@ fun showst (t, (v, u)) =
     String.concat [(showReal t), " ", (showReal v) , " ", (showReal u) ]
 
 
-fun solver (tmax,stepper) (t,st) =
+fun driver (tmax,stepper) (t,st) =
   let 
-      val (tn,stn) = (driver tstep params t) (stepper tstep (t,st))
+      val (tn,stn) = (solver tstep params t) (stepper tstep (t,st))
   in
       putStrLn (showst (t,st));
       if tn > tmax
       then (putStrLn "# All done!"; (tn,stn))
-      else solver (tmax,stepper) (tn,stn)
+      else driver (tmax,stepper) (tn,stn)
   end
 
 
-val (tn,_) = solver (1000.0,make_stepper params) (0.0,initial)
+val (tn,_) = driver (1000.0,make_stepper params) (0.0,initial)
 
 end
