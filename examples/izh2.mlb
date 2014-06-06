@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	izh2.sml
+in
+	structure IzhikevichRS2
+end
+
+
