@@ -1,0 +1,12 @@
+(* import libraries *)
+
+$(SML_LIB)/basis/basis.mlb
+
+local
+	../rk.sml
+	leakyIF.sml
+in
+	structure LeakyIF
+end
+
+
