@@ -175,6 +175,14 @@ val ratToRCLs = fn x => map ratToRCL x
 (* ratToReals :: [rational] -> [real] *)
 val ratToReals = fn x => map fromRational x
 
+fun m_scale sc_fn (s,v) =
+    if Real.== (s, 0.0)
+    then NONE
+    else (if Real.== (s, 1.0)
+          then SOME v
+	  else SOME (sc_fn (s,v)))
+
+
 (* Helper function to sum a list of K_i, skipping
    un-necessary multiplications and additions *)
 
@@ -182,13 +190,10 @@ fun k_sum (sc_fn: real * 'a -> 'a,
 	   sum_fn: 'a * 'a -> 'a, 
 	   h: real) 
 	  ((d,ns), ks) =
-    let fun m_scale (s,v) =
-	     (if Real.compare(s,0.0) = EQUAL then NONE
-	      else (if Real.compare(s,1.0) = EQUAL then SOME v
-		    else SOME (sc_fn (s,v))))
+    let 
 	val ns_ks = ListPair.zip (ns,ks)
     in
-	sc_fn (Real./ (h,d), foldl1 sum_fn (List.mapPartial m_scale ns_ks  ))
+	sc_fn (Real./ (h,d), foldl1 sum_fn (List.mapPartial (m_scale sc_fn) ns_ks  ))
     end
 
 
@@ -293,17 +298,14 @@ fun bk_sum (bs: RCL list)
            (sc_fn: real * 'a -> 'a, sum_fn: 'a * 'a -> 'a) 
            (ks: 'a list, h: real)
            (theta: real) = 
-    let fun m_scale (s,v) =
-	    (if Real.compare(s,0.0) = EQUAL then NONE
-	     else (if Real.compare(s,1.0) = EQUAL then SOME v
-		   else SOME (sc_fn (s,v))))
+    let 
 
         fun recur ((d,ns)::bs, k::ks, fs) =
             let
                 val (bsum,_) = foldl (fn (n,(sum,theta)) => 
                                          ((n*theta)+sum,theta*theta)) (0.0,theta) ns
             in
-                case m_scale (bsum, k) of 
+                case m_scale sc_fn (bsum, k) of 
                     SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
                   | NONE => recur (bs, ks, fs)
             end
