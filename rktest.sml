@@ -129,6 +129,7 @@ val rk4b: real stepper1 = make_rk4b()
 
 val rkhe:  real stepper2 = make_rkhe()
 val rkbs:  real stepper2 = make_rkbs()
+val rkoz:  real stepper2 = make_rkoz()
 val rkn34: real stepper2 = make_rkn34()
 val rkf45: real stepper2 = make_rkf45()
 val rkck:  real stepper2 = make_rkck()
@@ -139,6 +140,7 @@ val rkv65: real stepper2 = make_rkv65()
 
 val rkhe_aux:  real stepper1  = make_rkhe_aux()
 val rkbs_aux:  real stepper1  = make_rkbs_aux()
+val rkoz_aux: real stepper1  = make_rkoz_aux()
 val rkn34_aux: real stepper1  = make_rkn34_aux()
 val rkf45_aux: real stepper1  = make_rkf45_aux()
 val rkck_aux:  real stepper1  = make_rkck_aux()
@@ -159,6 +161,7 @@ fun run() =
   putStrLn "#### Adaptive Solvers";
   List.app solver2 [(rkhe, show_rkhe),
                     (rkbs, show_rkbs),
+                    (rkoz, show_rkoz),
                     (rkn34, show_rkn34),
                     (rkf45, show_rkf45),
                     (rkck, show_rkck),
@@ -171,6 +174,7 @@ fun run() =
   putStrLn "#### Auxiliary Solvers: Error Estimators from Adaptives";
   List.app solver1 [(rkhe_aux, show_rkhe_aux),
 		    (rkbs_aux, show_rkbs_aux),
+		    (rkoz_aux, show_rkoz_aux),
 		    (rkn34_aux, show_rkn34_aux),
 		    (rkf45_aux, show_rkf45_aux),
 		    (rkck_aux, show_rkck_aux),
