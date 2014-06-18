@@ -116,7 +116,7 @@ fun do_case3 integrator n =
 
 fun solver3 (integrator,stats) =
   (putStrLn stats;
-   putStrLn "# step yf uf err";
+   putStrLn "# step yf err uf";
    List.app (do_case3 (integrator (scaler,summer,deriv)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
@@ -150,6 +150,7 @@ val rkf78_aux: real stepper1  = make_rkf78_aux()
 val rkv65_aux: real stepper1  = make_rkv65_aux()
 
 val cerkdp:  real stepper3 = make_cerkdp()
+val cerkoz:  real stepper3 = make_cerkoz()
 
 
 fun run() =
@@ -170,6 +171,7 @@ fun run() =
                     (rkf78, show_rkf78),
                     (rkv65, show_rkv65)];
   putStrLn "#### Continuous Solvers";
+  List.app solver3 [(cerkoz, show_cerkoz)];
   List.app solver3 [(cerkdp, show_cerkdp)];
   putStrLn "#### Auxiliary Solvers: Error Estimators from Adaptives";
   List.app solver1 [(rkhe_aux, show_rkhe_aux),

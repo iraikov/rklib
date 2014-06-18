@@ -52,7 +52,8 @@ struct
 
 
 exception InsufficientArguments
-exception InvalidCoefficients
+exception KsInvalidCoefficients
+exception BkInvalidCoefficients
 
 fun putStr str =
     (TextIO.output (TextIO.stdOut, str))
@@ -210,7 +211,7 @@ fun gen_ks (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
     end
 
   | gen_ks (ksum_fn,sum_fn,der_fn,h,(tn,yn),ks,_,_) =
-    raise InvalidCoefficients
+    raise KsInvalidCoefficients
     
 
 (*
@@ -309,8 +310,12 @@ fun bk_sum (bs: RCL list)
                     SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
                   | NONE => recur (bs, ks, fs)
             end
-          | recur ([], [k], fs) = foldl1 sum_fn fs
-          | recur (_, _, _) = raise InvalidCoefficients
+          | recur ([], [], fs) = foldl1 sum_fn fs
+          | recur (bs, ks, fs) = 
+            (putStrLn ("BkInvalidCoefficients: length bs = " ^ (Int.toString (length bs)));
+             putStrLn ("BkInvalidCoefficients: length ks = " ^ (Int.toString (length ks)));
+             putStrLn ("BkInvalidCoefficients: length fs = " ^ (Int.toString (length fs)));
+             raise BkInvalidCoefficients)
     in
         recur (bs, ks, [])
     end
@@ -486,7 +491,7 @@ val show_rkoz_aux = rk_show1 ("Owren-Zennaro (2)", cs_oz, as_oz, bs_oz_aux)
 val ws_oz = ratToRCLs [[RAT 1, ~65//48, 41//72],
                        [RAT 0, 529//384, ~529//576],
                        [RAT 0, 125//128, ~125//192],
-                       [RAT ~1, RAT 1]]
+                       [RAT 0, RAT ~1, RAT 1]]
 
 fun make_cerkoz (): 'a stepper3  = core3 (cs_oz, as_oz, bs_oz, ds_oz, ws_oz)
 val show_cerkoz = rk_show3 ("Continuous Owren-Zennaro 3(2)", cs_oz, as_oz, bs_oz, ds_oz, ws_oz)
@@ -580,7 +585,8 @@ val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
                        [RAT 0, 4216//1113, ~18728//3339, 7580//3339],
                        [RAT 0, ~27//16, 9//2, ~415//192],
                        [RAT 0, ~2187//8480, 2673//2120, ~8991//6784],
-                       [RAT 0, 33//35, ~319//105, 187//84]]
+                       [RAT 0, 33//35, ~319//105, 187//84],
+                       []]
                                                          
 
 fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
