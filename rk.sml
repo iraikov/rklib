@@ -50,7 +50,6 @@
 structure RungeKutta =
 struct
 
-
 exception InsufficientArguments
 exception KsInvalidCoefficients
 exception BkInvalidCoefficients
@@ -66,6 +65,17 @@ fun putStrLn str =
 fun foldl1 f (a::b::lst) = List.foldl f (f(a,b)) lst
   | foldl1 f (a::[]) = a
   | foldl1 f _ = raise InsufficientArguments
+
+fun pairMapPartial f (lst1,lst2) =
+    let
+        fun recur (a1::lst1, a2::lst2, ax) =
+            (case f (a1,a2) of
+                 NONE => recur (lst1, lst2, ax)
+               | SOME v => recur (lst1, lst2, v::ax))
+          | recur (_, _, ax) = List.rev ax
+    in
+        recur (lst1, lst2, [])
+    end
 
 fun list_show (toString,sep,lb,rb) xs =
     let 
@@ -191,10 +201,22 @@ fun k_sum (sc_fn: real * 'a -> 'a,
 	   sum_fn: 'a * 'a -> 'a, 
 	   h: real) 
 	  ((d,ns), ks) =
-    let 
-	val ns_ks = ListPair.zip (ns,ks)
+    let
+        fun recur f g (n::ns, k::ks, ax) =
+            (case f (n,k) of
+                 NONE => recur f g (ns, ks, ax)
+               | SOME v => 
+                 let val ax' = case ax of NONE => SOME v
+                                        | SOME v' => SOME (g (v, v'))
+                 in
+                     recur f g (ns, ks, ax')
+                 end)
+          | recur f g (_, _, SOME ax) = ax
+          | recur f g (_, _, NONE) = raise InsufficientArguments
+
+
     in
-	sc_fn (Real./ (h,d), foldl1 sum_fn (List.mapPartial (m_scale sc_fn) ns_ks  ))
+        sc_fn (Real./ (h,d), recur (m_scale sc_fn) sum_fn (ns, ks, NONE))
     end
 
 
