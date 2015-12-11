@@ -27,13 +27,13 @@
  *	rkfe, rk3, rk4a, rk4b
  *
  * adaptive solvers:
- *	rkhe, rkbs, rkoz, rkf45, rkck, rkdp, rkdpb, rkf78, rkv65
+ *	rkhe, rkbs, rkoz3, rkf45, rkck, rkdp, rkdpb, rkf78, rkv65
  *
  * adaptive solvers with interpolation (CERK):
- *	cerkoz, cerkdp
+ *	cerkoz3, cerkdp
  *
  * auxiliary non-adaptive solvers (error estimators from the adaptive ones):
- *	rkhe_aux, rkbs_aux, rkoz_aux, rkf45_aux, rkck_aux, rkdp_aux, rkdpb_aux, 
+ *	rkhe_aux, rkbs_aux, rkoz3_aux, rkf45_aux, rkck_aux, rkdp_aux, rkdpb_aux, 
  *      rkf78_aux, rkv65_aux
  *
  * use rk4[ab] if you don't need an adaptive solver, rkdp or rkv65 if
@@ -493,30 +493,61 @@ val show_rkbs_aux = rk_show1 ("Bogacki-Shampine (2)", cs_bs, as_bs, bs_bs_aux)
 
 (* Owren-Zennaro, order 3/2 CERK method *)
 
-val cs_oz = ratToReals [RAT 0, 12//23, 4//5, RAT 1]
-val as_oz = ratToRCLs [[], 
+val cs_oz3 = ratToReals [RAT 0, 12//23, 4//5, RAT 1]
+val as_oz3 = ratToRCLs [[], 
                        [12//23], 
                        [~68//375, 368//375], 
                        [31//144, 529//1152, 125//384]]
-val r1_oz = [31//144, 529//1152, 125//384]	(* third-order coeffs *)
-val r2_oz = [1//24, 23//24] (* second-order coeffs *)
-val bs_oz = ratToRCL r1_oz
-val ds_oz = ratToRCL (diffs (r1_oz, r2_oz))
-fun make_rkoz (): 'a stepper2 = core2 (cs_oz, as_oz, bs_oz, ds_oz)
-val show_rkoz = rk_show2 ("Owren-Zennaro 3(2)", cs_oz, as_oz, bs_oz, ds_oz)
+val r1_oz3 = [31//144, 529//1152, 125//384]
+val r2_oz3 = [1//24, 23//24] 
+val bs_oz3 = ratToRCL r1_oz3
+val ds_oz3 = ratToRCL (diffs (r1_oz3, r2_oz3))
+fun make_rkoz3 (): 'a stepper2 = core2 (cs_oz3, as_oz3, bs_oz3, ds_oz3)
+val show_rkoz3 = rk_show2 ("Owren-Zennaro 3(2)", cs_oz3, as_oz3, bs_oz3, ds_oz3)
 
-val bs_oz_aux = ratToRCL r2_oz
-fun make_rkoz_aux (): 'a stepper1 = core1 (cs_oz, as_oz, bs_oz_aux)
-val show_rkoz_aux = rk_show1 ("Owren-Zennaro (2)", cs_oz, as_oz, bs_oz_aux)
+val bs_oz3_aux = ratToRCL r2_oz3
+fun make_rkoz3_aux (): 'a stepper1 = core1 (cs_oz3, as_oz3, bs_oz3_aux)
+val show_rkoz3_aux = rk_show1 ("Owren-Zennaro (2)", cs_oz3, as_oz3, bs_oz3_aux)
 
 (* interpolation coeffs for continuous method *)
-val ws_oz = ratToRCLs [[RAT 1, ~65//48, 41//72],
+val ws_oz3 = ratToRCLs [[RAT 1, ~65//48, 41//72],
                        [RAT 0, 529//384, ~529//576],
                        [RAT 0, 125//128, ~125//192],
                        [RAT 0, RAT ~1, RAT 1]]
 
-fun make_cerkoz (): 'a stepper3  = core3 (cs_oz, as_oz, bs_oz, ds_oz, ws_oz)
-val show_cerkoz = rk_show3 ("Continuous Owren-Zennaro 3(2)", cs_oz, as_oz, bs_oz, ds_oz, ws_oz)
+fun make_cerkoz3 (): 'a stepper3  = core3 (cs_oz3, as_oz3, bs_oz3, ds_oz3, ws_oz3)
+val show_cerkoz3 = rk_show3 ("Continuous Owren-Zennaro 3(2)", cs_oz3, as_oz3, bs_oz3, ds_oz3, ws_oz3)
+
+(* Owren-Zennaro, order 4/3 CERK method *)
+
+val cs_oz4 = ratToReals [RAT 0, 1//6, 11//37, 11//17, 13//15, RAT 1]
+val as_oz4 = ratToRCLs [[], 
+                       [1//6], 
+                       [44//1369, 363//1369], 
+                       [3388//4913, ~8349//4913, 8140//4913],
+                       [~36764//408375, 767//1125, ~32708//136125, 210392//408375],
+                       [1697//18876, RAT 0, 50653//116160, 299693//1626240, 3375//11648]]
+val r1_oz4 = [1697//18876, RAT 0, 50653//116160, 299693//1626240, 3375//11648]	
+val r2_oz4 = [101//63, RAT 0, ~1369//14520, 11849//14520]
+val bs_oz4 = ratToRCL r1_oz4
+val ds_oz4 = ratToRCL (diffs (r1_oz4, r2_oz4))
+fun make_rkoz4 (): 'a stepper2 = core2 (cs_oz4, as_oz4, bs_oz4, ds_oz4)
+val show_rkoz4 = rk_show2 ("Owren-Zennaro 4(3)", cs_oz4, as_oz4, bs_oz4, ds_oz4)
+
+val bs_oz4_aux = ratToRCL r2_oz4
+fun make_rkoz4_aux (): 'a stepper1 = core1 (cs_oz4, as_oz4, bs_oz4_aux)
+val show_rkoz4_aux = rk_show1 ("Owren-Zennaro (3)", cs_oz4, as_oz4, bs_oz4_aux)
+
+(* interpolation coeffs for continuous method *)
+val ws_oz4 = ratToRCLs [[RAT 1, ~104217//37466, 1806901//618189, ~866577//824252],
+                        [],
+                        [RAT 0, 861101//230560, ~2178079//380424, 12308679//5072320],
+                        [RAT 0, ~638869//293440, 6244423//5325936, ~7816583//10144640],
+                        [RAT 0, ~1522125//762944, 982125//190736, ~624375//217984],
+                        [RAT 0, 165//131, ~461//131, 296//131]]
+
+fun make_cerkoz4 (): 'a stepper3  = core3 (cs_oz4, as_oz4, bs_oz4, ds_oz4, ws_oz4)
+val show_cerkoz4 = rk_show3 ("Continuous Owren-Zennaro 4(3)", cs_oz4, as_oz4, bs_oz4, ds_oz4, ws_oz4)
 
 (* Runge-Kutta-Norsett, order 3/4 *)
 
@@ -527,7 +558,7 @@ val as_rkn34 = ratToRCLs [[],
                           [~125//672, 325//336],
                           [371//891, ~200//297, 1120//891]]
 val r1_rkn34 = [37//225, 44//117, RAT 0, 448//975] (* third-order coeffs *)
-val r2_rkn34 = [25//162, 32//135, 256//567, RAT 0, 11//70] (* second-order coeffs *)
+val r2_rkn34 = [25//162, 32//135, 256//567, RAT 0, 11//70] (* fourth-order coeffs *)
 val bs_rkn34 = ratToRCL r1_rkn34
 val ds_rkn34 = ratToRCL (diffs (r1_rkn34, r2_rkn34))
 fun make_rkn34 (): 'a stepper2 = core2 (cs_rkn34, as_rkn34, bs_rkn34, ds_rkn34)
@@ -595,9 +626,9 @@ val as_dp = ratToRCLs [[],
                        [19372//6561, ~25360//2187, 64448//6561, ~212//729],
                        [9017//3168, ~355//33, 46732//5247, 49//176, ~5103//18656],
                        [35//384, RAT 0, 500//1113, 125//192, ~2187//6784, 11//84]]
-(* fifth-order coeffs *)
-val r1_dp = [35//384, RAT 0, 500//1113, 125//192, ~2187//6784, 11//84]
 (* fourth-order coeffs *)
+val r1_dp = [35//384, RAT 0, 500//1113, 125//192, ~2187//6784, 11//84]
+(* fifth-order coeffs *)
 val r2_dp = [5179//57600, RAT 0, 7571//16695, 393//640, ~92097//339200, 187//2100, 1//40]
 val bs_dp = ratToRCL r1_dp
 val ds_dp = ratToRCL (diffs (r1_dp, r2_dp))
@@ -635,9 +666,9 @@ val as_dpb = ratToRCLs [[],
                         [83//330, ~13//22, 61//66, 9//110],
                         [~19//28, 9//4, 1//7, ~27//7, 22//7],
                         [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]]
-(* fifth-order coeffs *)
-val r1_dpb = [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]
 (* fourth-order coeffs *)
+val r1_dpb = [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]
+(* fifth-order coeffs *)
 val r2_dpb = [431//5000, RAT 0, 333//500, ~7857//10000, 957//1000, 193//2000, ~1//50]
 val bs_dpb = ratToRCL r1_dpb
 val ds_dpb = ratToRCL (diffs (r1_dpb, r2_dpb))
