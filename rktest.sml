@@ -26,6 +26,7 @@ val con = ~0.4
 fun deriv (t,y) = con*y
 val t0 = 0.0
 val y0 = 1.75
+val yp0 = deriv(t0,y0)
 fun exact t = y0*Real.Math.exp(con*(t - t0))
 
 fun putStr str =
@@ -59,6 +60,16 @@ fun gen_soln2 (integrator,h,t,st) =
       else gen_soln2 (integrator,h,tn,stn)
   end
 
+fun gen_soln2_fsal (integrator,h,t,st,k) =
+  let 
+      val (stn,en,kn) = integrator (t,st,k)
+      val tn       = Real.+(t,h)
+  in 
+      if t >= 5.0
+      then putStrLn (showst (tn,stn))
+      else gen_soln2_fsal (integrator,h,tn,stn,kn)
+  end
+
 fun do_case1 integrator n =
   let 
       val h = if n < 0 then Real.Math.pow (2.0,Real.fromInt (~n)) 
@@ -86,10 +97,27 @@ fun do_case2 integrator n =
       gen_soln2 (integrator h,h,t0,y0)
   end
 
+fun do_case2_fsal integrator n =
+  let 
+      val h = if n < 0 then Real.Math.pow (2.0,Real.fromInt (~n)) 
+	      else Real.Math.pow (0.5,Real.fromInt n)
+      val sep = if n <= 4 then "\t\t" else "\t"
+  in
+      putStr (String.concat [(showReal h), sep]);
+      gen_soln2_fsal (integrator h,h,t0,y0,yp0)
+  end
+
 fun solver2 (integrator,stats) =
   (putStrLn stats;
    putStrLn "# step yf err";
    List.app (do_case2 (integrator (scaler,summer,deriv)))
+	    (List.tabulate (15, fn x => x - 2));
+   putStrLn "# All done!\n")
+
+fun solver2_fsal (integrator,stats) =
+  (putStrLn stats;
+   putStrLn "# step yf err";
+   List.app (do_case2_fsal (integrator (scaler,summer,deriv)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
 
@@ -128,14 +156,14 @@ val rk4a: real stepper1 = make_rk4a()
 val rk4b: real stepper1 = make_rk4b()
 
 val rkhe:  real stepper2 = make_rkhe()
-val rkbs:  real stepper2 = make_rkbs()
-val rkoz3:  real stepper2 = make_rkoz3()
+val rkbs:  real stepper2_fsal = make_rkbs()
+val rkoz3:  real stepper2_fsal = make_rkoz3()
 val rkn34: real stepper2 = make_rkn34()
 val rkf45: real stepper2 = make_rkf45()
 val rkck:  real stepper2 = make_rkck()
-val rkoz4:  real stepper2 = make_rkoz4()
-val rkdp:  real stepper2 = make_rkdp()
-val rkdpb: real stepper2 = make_rkdpb()
+val rkoz4:  real stepper2_fsal = make_rkoz4()
+val rkdp:  real stepper2_fsal = make_rkdp()
+val rkdpb: real stepper2_fsal = make_rkdpb()
 val rkf78: real stepper2 = make_rkf78()
 val rkv65: real stepper2 = make_rkv65()
 
@@ -164,16 +192,17 @@ fun run() =
                     (rk4b, show_rk4b)];
   putStrLn "#### Adaptive Solvers";
   List.app solver2 [(rkhe, show_rkhe),
-                    (rkbs, show_rkbs),
-                    (rkoz3, show_rkoz3),
                     (rkn34, show_rkn34),
                     (rkf45, show_rkf45),
                     (rkck, show_rkck),
-                    (rkoz4, show_rkoz4),
-                    (rkdp, show_rkdp),
-                    (rkdpb, show_rkdpb),
                     (rkf78, show_rkf78),
                     (rkv65, show_rkv65)];
+  putStrLn "#### Adaptive Solvers (FSAL)";
+  List.app solver2_fsal [(rkbs, show_rkbs),
+                         (rkoz3, show_rkoz3),
+                         (rkoz4, show_rkoz4),
+                         (rkdp, show_rkdp),
+                         (rkdpb, show_rkdpb)];
   putStrLn "#### Continuous Solvers";
   List.app solver3 [(cerkoz3, show_cerkoz3)];
   List.app solver3 [(cerkoz4, show_cerkoz4)];

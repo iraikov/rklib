@@ -51,8 +51,10 @@ structure RungeKutta =
 struct
 
 exception InsufficientArguments
+exception KsumInsufficientArguments
 exception KsInvalidCoefficients
 exception BkInvalidCoefficients
+exception FSALInvalidCoefficients
 
 fun putStr str =
     (TextIO.output (TextIO.stdOut, str))
@@ -167,6 +169,9 @@ end
 
 type RCL = real * real list
 
+fun rclEq ((d1,ns1),(d2,ns2)) =
+    (Real.== (d1,d2)) andalso (ListPair.all (fn(x,y) => Real.==(x,y)) (ns1,ns2))
+
 (* ratToRCL :: [rational] -> RCL *)
 fun ratToRCL [] = (1.0, [])
   | ratToRCL rs =
@@ -212,7 +217,7 @@ fun k_sum (sc_fn: real * 'a -> 'a,
                      recur f g (ns, ks, ax')
                  end)
           | recur f g (_, _, SOME ax) = ax
-          | recur f g (_, _, NONE) = raise InsufficientArguments
+          | recur f g (_, _, NONE) = raise KsumInsufficientArguments
 
 
     in
@@ -233,6 +238,22 @@ fun gen_ks (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
     end
 
   | gen_ks (ksum_fn,sum_fn,der_fn,h,(tn,yn),ks,_,_) =
+    raise KsInvalidCoefficients
+    
+(* Helper function for FSAL solvers  *)
+fun gen_ks_fsal (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
+	         h,(tn,yn,ypn),ks,[],[]) = ks
+
+  | gen_ks_fsal (ksum_fn,sum_fn,der_fn,h,old as (tn,yn,ypn),ks,(c::cs),(a::ar)) =
+    if (List.null ks)
+    then gen_ks_fsal (ksum_fn, sum_fn, der_fn, h, old, [ypn], cs, ar)
+    else (let
+             val yn1 = sum_fn (yn, ksum_fn (a,ks))
+         in
+	     gen_ks_fsal (ksum_fn, sum_fn, der_fn, h, old, (ks @ [der_fn (tn + c*h, yn1)]), cs, ar)
+         end)
+
+  | gen_ks_fsal (ksum_fn,sum_fn,der_fn,h,old,ks,_,_) =
     raise KsInvalidCoefficients
     
 
@@ -301,18 +322,45 @@ type 'a stepper2 =  ((real * 'a -> 'a) *
 		    (real -> (real * 'a) -> ('a * 'a))
 
 fun core2 (cl: real list, al: RCL list, bl: RCL, dl: RCL) 
-	  (sc_fn: real * 'a -> 'a, 
+          (sc_fn: real * 'a -> 'a, 
 	   sum_fn: 'a * 'a -> 'a,
 	   der_fn: real * 'a -> 'a)
-	   (h: real)
-	   (old as (tn,yn: 'a)) =
-  let
-      val ksum = k_sum (sc_fn,sum_fn,h)
-      val ks   = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
-  in
-      (sum_fn (yn, ksum (bl, ks)), ksum (dl, ks))
-  end
+          (h: real)
+          (old as (tn,yn: 'a)) =
+    let
+        val ksum = k_sum (sc_fn,sum_fn,h)
+        val ks = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
+    in
+        (sum_fn (yn, ksum (bl, ks)), ksum (dl, ks))
+    end
 
+
+(* 
+   Core routine for solvers with the First Same As Last (FSAL)
+   property.  In this case, the last stage of the rhs evaluation is
+   preserved and used for the next solver invocation.
+*)
+
+type 'a stepper2_fsal =  ((real * 'a -> 'a) * 
+		          ('a * 'a -> 'a)   *
+		          (real * 'a -> 'a)) ->
+		         (real -> (real * 'a * 'a) -> ('a * 'a * 'a))
+
+fun core2_fsal (cl: real list, al: RCL list, bl: RCL, dl: RCL) =
+    if rclEq (bl, List.last al)
+    then 
+        (fn (sc_fn: real * 'a -> 'a, 
+	     sum_fn: 'a * 'a -> 'a,
+	     der_fn: real * 'a -> 'a) =>
+            fn (h: real) =>
+               fn (old as (tn,yn: 'a,ypn: 'a)) =>
+                 (let
+                     val ksum = k_sum (sc_fn,sum_fn,h)
+                     val ks = gen_ks_fsal (ksum, sum_fn, der_fn, h, old, [], cl, al)
+                 in
+                     (sum_fn (yn, ksum (bl, ks)), ksum (dl, ks), List.last ks)
+                 end))
+    else raise FSALInvalidCoefficients
 
 
 (* Helper function to sum a list of b_i (theta) K_i *)
@@ -363,20 +411,23 @@ type 'a stepper3 =  ((real * 'a -> 'a) *
 		    (real -> (real * 'a) -> ('a * 'a * (real -> 'a)))
 
 fun core3 (cl: real list, al: RCL list, bl: RCL, dl: RCL, wl: RCL list) 
-	  (sc_fn: real * 'a -> 'a, 
-	   sum_fn: 'a * 'a -> 'a,
+          (sc_fn: real * 'a -> 'a, 
+           sum_fn: 'a * 'a -> 'a,
 	   der_fn: real * 'a -> 'a)
-	   (h: real)
-	   (old as (tn,yn: 'a)) =
-  let
-      val interp'   = interp wl (sc_fn,sum_fn)
-      val ksum      = k_sum (sc_fn,sum_fn,h)
-      val ks        = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
-  in
-      (sum_fn (yn, ksum (bl, ks)),
-       ksum (dl, ks),
-       interp' (ks, h) (tn,yn))
-  end
+	  (h: real)
+	  (old as (tn,yn: 'a)) =
+    let
+        val interp'   = interp wl (sc_fn,sum_fn)
+        val ksum      = k_sum (sc_fn,sum_fn,h)
+    in
+        let
+            val ks = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
+        in
+            (sum_fn (yn, ksum (bl, ks)),
+             ksum (dl, ks),
+             interp' (ks, h) (tn,yn))
+        end
+    end
 
 (* Helper routines to show the internal tables *)
 
@@ -484,7 +535,7 @@ val r1_bs = [2//9, 1//3, 4//9]		(* third-order coeffs *)
 val r2_bs = [7//24, 1//4, 1//3, 1//8]	(* second-order coeffs *)
 val bs_bs = ratToRCL r1_bs
 val ds_bs = ratToRCL (diffs (r1_bs, r2_bs))
-fun make_rkbs (): 'a stepper2 = core2 (cs_bs, as_bs, bs_bs, ds_bs)
+fun make_rkbs (): 'a stepper2_fsal = core2_fsal (cs_bs, as_bs, bs_bs, ds_bs)
 val show_rkbs = rk_show2 ("Bogacki-Shampine 3(2)", cs_bs, as_bs, bs_bs, ds_bs)
 
 val bs_bs_aux = ratToRCL r2_bs
@@ -502,7 +553,7 @@ val r1_oz3 = [31//144, 529//1152, 125//384]
 val r2_oz3 = [1//24, 23//24] 
 val bs_oz3 = ratToRCL r1_oz3
 val ds_oz3 = ratToRCL (diffs (r1_oz3, r2_oz3))
-fun make_rkoz3 (): 'a stepper2 = core2 (cs_oz3, as_oz3, bs_oz3, ds_oz3)
+fun make_rkoz3 (): 'a stepper2_fsal = core2_fsal (cs_oz3, as_oz3, bs_oz3, ds_oz3)
 val show_rkoz3 = rk_show2 ("Owren-Zennaro 3(2)", cs_oz3, as_oz3, bs_oz3, ds_oz3)
 
 val bs_oz3_aux = ratToRCL r2_oz3
@@ -531,7 +582,7 @@ val r1_oz4 = [1697//18876, RAT 0, 50653//116160, 299693//1626240, 3375//11648]
 val r2_oz4 = [101//63, RAT 0, ~1369//14520, 11849//14520]
 val bs_oz4 = ratToRCL r1_oz4
 val ds_oz4 = ratToRCL (diffs (r1_oz4, r2_oz4))
-fun make_rkoz4 (): 'a stepper2 = core2 (cs_oz4, as_oz4, bs_oz4, ds_oz4)
+fun make_rkoz4 (): 'a stepper2_fsal = core2_fsal (cs_oz4, as_oz4, bs_oz4, ds_oz4)
 val show_rkoz4 = rk_show2 ("Owren-Zennaro 4(3)", cs_oz4, as_oz4, bs_oz4, ds_oz4)
 
 val bs_oz4_aux = ratToRCL r2_oz4
@@ -645,7 +696,7 @@ val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
 fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
 val show_cerkdp = rk_show3 ("Continuous Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
 
-fun make_rkdp (): 'a stepper2  = core2 (cs_dp, as_dp, bs_dp, ds_dp)
+fun make_rkdp (): 'a stepper2_fsal  = core2_fsal (cs_dp, as_dp, bs_dp, ds_dp)
 val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp, ds_dp)
 
 val bs_dp_aux = ratToRCL r2_dp
@@ -672,7 +723,7 @@ val r1_dpb = [19//200, RAT 0, 3//5, ~243//400, 33//40, 7//80]
 val r2_dpb = [431//5000, RAT 0, 333//500, ~7857//10000, 957//1000, 193//2000, ~1//50]
 val bs_dpb = ratToRCL r1_dpb
 val ds_dpb = ratToRCL (diffs (r1_dpb, r2_dpb))
-fun make_rkdpb (): 'a stepper2  = core2 (cs_dpb, as_dpb, bs_dpb, ds_dpb)
+fun make_rkdpb (): 'a stepper2_fsal  = core2_fsal (cs_dpb, as_dpb, bs_dpb, ds_dpb)
 val show_rkdpb = rk_show2 ("Dormand-Prince 5(4) B", cs_dpb, as_dpb, bs_dpb, ds_dpb)
 
 val bs_dpb_aux = ratToRCL r2_dpb
