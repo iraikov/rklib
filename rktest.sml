@@ -121,31 +121,31 @@ fun solver2_fsal (integrator,stats) =
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
 
-fun gen_soln3 (integrator,h,t,st) =
+fun gen_soln3 (integrator,interp,h,t,st) =
   let 
-      val (stn,en,inp) = integrator (t,st)
+      val (stn,en,ks) = integrator (t,st)
       val tn       = Real.+(t,h)
   in 
       if t >= 5.0
       then (putStr (showst (tn,stn));
-            putStrLn ("\t" ^ (showReal (inp 1.0))))
-      else gen_soln3 (integrator,h,tn,stn)
+            putStrLn ("\t" ^ (showReal (interp ks (tn,stn) 1.0))))
+      else gen_soln3 (integrator,interp,h,tn,stn)
   end
 
-fun do_case3 integrator n =
+fun do_case3 integrator interp n =
   let 
       val h = if n < 0 then Real.Math.pow (2.0,Real.fromInt (~n)) 
 	      else Real.Math.pow (0.5,Real.fromInt n)
       val sep = if n <= 4 then "\t\t" else "\t"
   in
       putStr (String.concat [(showReal h), sep]);
-      gen_soln3 (integrator h,h,t0,y0)
+      gen_soln3 (integrator h,interp h,h,t0,y0)
   end
 
-fun solver3 (integrator,stats) =
+fun solver3 (integrator,interp,stats) =
   (putStrLn stats;
    putStrLn "# step yf err uf";
-   List.app (do_case3 (integrator (scaler,summer,deriv)))
+   List.app (do_case3 (integrator (scaler,summer,deriv)) (interp (scaler,summer)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
 
@@ -183,7 +183,12 @@ val cerkdp:  real stepper3 = make_cerkdp()
 val cerkoz3:  real stepper3 = make_cerkoz3()
 val cerkoz4:  real stepper3 = make_cerkoz4()
 
+val interp_cerkdp  = make_interp_cerkdp()
+val interp_cerkoz3 = make_interp_cerkoz3()
+val interp_cerkoz4 = make_interp_cerkoz4()
 
+
+                                          
 fun run() =
  (putStrLn "#### Non-Adaptive Solvers";
   List.app solver1 [(rkfe, show_rkfe),
@@ -204,9 +209,9 @@ fun run() =
                          (rkdp, show_rkdp),
                          (rkdpb, show_rkdpb)];
   putStrLn "#### Continuous Solvers";
-  List.app solver3 [(cerkoz3, show_cerkoz3)];
-  List.app solver3 [(cerkoz4, show_cerkoz4)];
-  List.app solver3 [(cerkdp, show_cerkdp)];
+  List.app solver3 [(cerkoz3, interp_cerkoz3, show_cerkoz3)];
+  List.app solver3 [(cerkoz4, interp_cerkoz4, show_cerkoz4)];
+  List.app solver3 [(cerkdp, interp_cerkdp, show_cerkdp)];
   putStrLn "#### Auxiliary Solvers: Error Estimators from Adaptives";
   List.app solver1 [(rkhe_aux, show_rkhe_aux),
 		    (rkbs_aux, show_rkbs_aux),

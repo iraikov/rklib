@@ -395,10 +395,10 @@ fun bk_sum (bs: RCL list)
 fun interp (ws: RCL list)
            (sc_fn: real * 'a -> 'a, 
 	    sum_fn: 'a * 'a -> 'a)
-           (ks: 'a list, h: real)
-	   (tn,yn: 'a) (theta: real) = 
-    sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)
-
+           (h: real) (ks: 'a list)
+	   (tn,yn: 'a) =
+  fn (theta) => sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)
+                           
 
 (* Core routine for constructing continuous methods.  It returns a
    triple (ynew,enew,interp), where interp is the interpolation
@@ -408,24 +408,23 @@ fun interp (ws: RCL list)
 type 'a stepper3 =  ((real * 'a -> 'a) * 
 		     ('a * 'a -> 'a)   *
 		     (real * 'a -> 'a)) ->
-		    (real -> (real * 'a) -> ('a * 'a * (real -> 'a)))
+		    (real -> (real * 'a) -> ('a * 'a * ('a list)))
 
-fun core3 (cl: real list, al: RCL list, bl: RCL, dl: RCL, wl: RCL list) 
+fun core3 (cl: real list, al: RCL list, bl: RCL, dl: RCL) 
           (sc_fn: real * 'a -> 'a, 
            sum_fn: 'a * 'a -> 'a,
 	   der_fn: real * 'a -> 'a)
 	  (h: real)
 	  (old as (tn,yn: 'a)) =
     let
-        val interp'   = interp wl (sc_fn,sum_fn)
-        val ksum      = k_sum (sc_fn,sum_fn,h)
+        val ksum = k_sum (sc_fn,sum_fn,h)
     in
         let
             val ks = gen_ks (ksum, sum_fn, der_fn, h, old, [], cl, al)
         in
             (sum_fn (yn, ksum (bl, ks)),
              ksum (dl, ks),
-             interp' (ks, h) (tn,yn))
+             ks)
         end
     end
 
@@ -566,9 +565,11 @@ val ws_oz3 = ratToRCLs [[RAT 1, ~65//48, 41//72],
                        [RAT 0, 125//128, ~125//192],
                        [RAT 0, RAT ~1, RAT 1]]
 
-fun make_cerkoz3 (): 'a stepper3  = core3 (cs_oz3, as_oz3, bs_oz3, ds_oz3, ws_oz3)
+fun make_cerkoz3 (): 'a stepper3  = core3 (cs_oz3, as_oz3, bs_oz3, ds_oz3)
 val show_cerkoz3 = rk_show3 ("Continuous Owren-Zennaro 3(2)", cs_oz3, as_oz3, bs_oz3, ds_oz3, ws_oz3)
+fun make_interp_cerkoz3 () = interp ws_oz3
 
+                            
 (* Owren-Zennaro, order 4/3 CERK method *)
 
 val cs_oz4 = ratToReals [RAT 0, 1//6, 11//37, 11//17, 13//15, RAT 1]
@@ -597,8 +598,9 @@ val ws_oz4 = ratToRCLs [[RAT 1, ~104217//37466, 1806901//618189, ~866577//824252
                         [RAT 0, ~1522125//762944, 982125//190736, ~624375//217984],
                         [RAT 0, 165//131, ~461//131, 296//131]]
 
-fun make_cerkoz4 (): 'a stepper3  = core3 (cs_oz4, as_oz4, bs_oz4, ds_oz4, ws_oz4)
+fun make_cerkoz4 (): 'a stepper3  = core3 (cs_oz4, as_oz4, bs_oz4, ds_oz4)
 val show_cerkoz4 = rk_show3 ("Continuous Owren-Zennaro 4(3)", cs_oz4, as_oz4, bs_oz4, ds_oz4, ws_oz4)
+fun make_interp_cerkoz4 () = interp ws_oz4
 
 (* Runge-Kutta-Norsett, order 3/4 *)
 
@@ -693,8 +695,9 @@ val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
                        []]
                                                          
 
-fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
+fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp)
 val show_cerkdp = rk_show3 ("Continuous Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
+fun make_interp_cerkdp () = interp ws_dp
 
 fun make_rkdp (): 'a stepper2_fsal  = core2_fsal (cs_dp, as_dp, bs_dp, ds_dp)
 val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp, ds_dp)
