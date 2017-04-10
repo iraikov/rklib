@@ -68,17 +68,6 @@ fun foldl1 f (a::b::lst) = List.foldl f (f(a,b)) lst
   | foldl1 f (a::[]) = a
   | foldl1 f _ = raise InsufficientArguments
 
-fun pairMapPartial f (lst1,lst2) =
-    let
-        fun recur (a1::lst1, a2::lst2, ax) =
-            (case f (a1,a2) of
-                 NONE => recur (lst1, lst2, ax)
-               | SOME v => recur (lst1, lst2, v::ax))
-          | recur (_, _, ax) = List.rev ax
-    in
-        recur (lst1, lst2, [])
-    end
-
 fun list_show (toString,sep,lb,rb) xs =
     let 
 	fun loop (x::xs,str) = loop (xs, str ^ sep ^ (toString x))
