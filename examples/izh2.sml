@@ -74,7 +74,7 @@ fun make_event (params as {theta,k1,k2,k3,a,b,c,d,I})  =
 
 datatype ('a, 'b) either = Left of 'a | Right of 'b
 
-val tol = Real.Math.pow (10.0, ~6.0)
+val tol = 1E~14
 val lb = 0.5 * tol
 val ub = 1.0 * tol
 
@@ -91,40 +91,36 @@ fun predictor tol (h,(v,w)) =
   end
 
 
-fun secant tol f fg0 guess1 guess0 = 
-    let open Real
-        val fg1 = f guess1
-        val newGuess = guess1 - fg1 * (guess1 - guess0) / (fg1 - fg0)
-        val err =  abs (newGuess - guess1)
-    in 
-        if (err < tol)
-        then newGuess
-        else secant tol f fg1 newGuess guess1 
-    end
-
-
 datatype 'a result = Next of 'a | Root of 'a
 
-fun solver (stepper,evtest) (t,st,tstep) =
-    let open Real
-        val ((v,u),e as (ev,eu),finterp) = stepper tstep (t,st)
-    in
-        case predictor tol (tstep,e) of
-            Right tstep' => 
-            (if (evtest (v,u) >= 0.0)
-             then (let
-                      val tn      = t+tstep
-                      val theta   = secant tol (evtest o finterp) (evtest st) 1.0 0.0
-                      val st'     = finterp theta
-                  in
-                      (putStrLn ("# event: theta = " ^ (showReal theta) ^ " tstep = " ^ (showReal tstep));
-                       putStrLn ("# event: finterp theta = " ^ (showReal (#1(st'))));
-                       Root (t+tol,st',tstep'))
-                  end)
-             else Next (t+tstep,(v,u),tstep'))
-          | Left tstep'  => 
-            solver (stepper,evtest) (t,st,tstep')
-    end
+
+                                              
+fun solver (stepper,evtest,hinterp) =
+  let
+      fun step (t,st,tstep) =
+        let open Real
+            val ((v,u),e as (ev,eu),ks) = stepper tstep (t,st)
+        in
+            case predictor tol (tstep,e) of
+                Right tstep' => 
+                (if (evtest (v,u) >= 0.0)
+                 then (let
+                          val tn      = t+tstep
+                          val finterp = hinterp (tstep, ks, tn, (v,u))
+                          val theta   = RootFind.brent tol (evtest o finterp) 0.0 1.0
+                          val st'     = finterp theta
+                      in
+                          (putStrLn ("# event: theta = " ^ (showReal theta) ^ " tstep = " ^ (showReal tstep));
+                           putStrLn ("# event: finterp theta = " ^ (showReal (#1(st'))));
+                           Root (t,st',tstep'))
+                      end)
+                 else Next (t+tstep,(v,u),tstep'))
+              | Left tstep'  => 
+                step (t,st,tstep')
+        end
+  in
+      step
+  end
     
 
 
@@ -133,23 +129,30 @@ val initial = (~65.0,~13.0)
 val tstep = 0.5
 
 val cerkdp: IzhState stepper3 = make_cerkdp()
+val hinterp: IzhState hinterp = make_interp_cerkdp (scaler,summer)
 fun make_stepper (params) = cerkdp (scaler,summer,deriv params)
 
 
-fun driver (tmax,stepper,(evtest,evhandle)) (t,st,tstep) =
-    let open Real in
-        case solver (stepper,evtest) (t,st,tstep) of
-            Next (tn,stn,tstep') =>
-            (putStrLn (showst (t,st));
-             if tn > tmax
-             then (putStrLn "# All done!"; (tn,stn))
-             else driver (tmax,stepper,(evtest,evhandle)) (tn,stn,tstep'))
-          | Root (tn,stn,tstep') =>
-            (putStrLn (showst (t,st));
-             putStrLn (showst (tn,stn));
-             driver (tmax,stepper,(evtest,evhandle)) (tn+tol,evhandle (stn,tol),tstep'))
-    end
+fun driver (tmax,stepper,(evtest,evhandle),hinterp) =
+  let val solver' = solver (stepper,evtest,hinterp)
+      fun recur (t,st,tstep) =
+        let open Real in
+            case solver' (t,st,tstep) of
+                Next (tn,stn,tstep') =>
+                (putStrLn (showst (t,st));
+                 if tn > tmax
+                 then (putStrLn "# All done!"; (tn,stn))
+                 else recur (tn,stn,tstep'))
+              | Root (tn,stn,tstep') =>
+                (putStrLn (showst (t,st));
+                 putStrLn (showst (tn,stn));
+                 recur (tn,evhandle (stn,tol),tstep'))
+        end
+  in
+   recur         
+  end
 
-val (tn,_) = driver (1000.0,make_stepper params,make_event params) (0.0,initial,tstep)
+val (tn,_) = driver (1000.0,make_stepper params,make_event params,hinterp)
+                    (0.0,initial,tstep)
 
 end

@@ -380,13 +380,16 @@ fun bk_sum (bs: RCL list)
     end
     
 
-(* Interpolation routine for continuous explicit RK (CERK) methods *)
-fun interp (ws: RCL list)
-           (sc_fn: real * 'a -> 'a, 
-	    sum_fn: 'a * 'a -> 'a)
-           (h: real) (ks: 'a list)
-	   (tn,yn: 'a) =
-  fn (theta) => sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)
+(* Hermite interpolation routine for continuous explicit RK (CERK) methods *)
+
+type 'a hinterp = (real * 'a list * real * 'a) ->
+                  (real -> 'a)
+                   
+fun hinterp (ws: RCL list,
+             sc_fn: real * 'a -> 'a, 
+             sum_fn: 'a * 'a -> 'a) =
+     (fn (h: real, ks: 'a list, tn, yn: 'a) =>
+         (fn (theta) => sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)))
                            
 
 (* Core routine for constructing continuous methods.  It returns a
@@ -556,7 +559,7 @@ val ws_oz3 = ratToRCLs [[RAT 1, ~65//48, 41//72],
 
 fun make_cerkoz3 (): 'a stepper3  = core3 (cs_oz3, as_oz3, bs_oz3, ds_oz3)
 val show_cerkoz3 = rk_show3 ("Continuous Owren-Zennaro 3(2)", cs_oz3, as_oz3, bs_oz3, ds_oz3, ws_oz3)
-fun make_interp_cerkoz3 () = interp ws_oz3
+fun make_interp_cerkoz3 (scaler, summer): 'a hinterp = hinterp (ws_oz3,scaler,summer)
 
                             
 (* Owren-Zennaro, order 4/3 CERK method *)
@@ -589,7 +592,7 @@ val ws_oz4 = ratToRCLs [[RAT 1, ~104217//37466, 1806901//618189, ~866577//824252
 
 fun make_cerkoz4 (): 'a stepper3  = core3 (cs_oz4, as_oz4, bs_oz4, ds_oz4)
 val show_cerkoz4 = rk_show3 ("Continuous Owren-Zennaro 4(3)", cs_oz4, as_oz4, bs_oz4, ds_oz4, ws_oz4)
-fun make_interp_cerkoz4 () = interp ws_oz4
+fun make_interp_cerkoz4 (scaler,summer): 'a hinterp = hinterp (ws_oz4, scaler, summer)
 
 (* Runge-Kutta-Norsett, order 3/4 *)
 
@@ -686,7 +689,7 @@ val ws_dp = ratToRCLs [[RAT 1, ~1337//480, 1039//360, ~1163//1152],
 
 fun make_cerkdp (): 'a stepper3  = core3 (cs_dp, as_dp, bs_dp, ds_dp)
 val show_cerkdp = rk_show3 ("Continuous Dormand-Prince 5(4)", cs_dp, as_dp, bs_dp, ds_dp, ws_dp)
-fun make_interp_cerkdp () = interp ws_dp
+fun make_interp_cerkdp (scaler,summer): 'a hinterp = hinterp (ws_dp,scaler,summer)
 
 fun make_rkdp (): 'a stepper2_fsal  = core2_fsal (cs_dp, as_dp, bs_dp, ds_dp)
 val show_rkdp = rk_show2 ("Dormand-Prince 5(4) \"DOPRI5\"", cs_dp, as_dp, bs_dp, ds_dp)

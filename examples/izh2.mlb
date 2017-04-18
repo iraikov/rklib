@@ -3,9 +3,13 @@
 $(SML_LIB)/basis/basis.mlb
 
 local
-	../rk.sml
+	../rk.mlb
+	../printf.sml
+	../rootfind.sml
 	izh2.sml
 in
+        structure RungeKutta
+        structure RootFind 
 	structure IzhikevichRS2
 end
 
