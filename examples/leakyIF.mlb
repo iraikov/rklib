@@ -4,6 +4,8 @@ $(SML_LIB)/basis/basis.mlb
 
 local
 	../rk.sml
+        ../printf.sml
+        ../rootfind.sml
 	leakyIF.sml
 in
 	structure LeakyIF
