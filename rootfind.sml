@@ -83,12 +83,17 @@ and brent_int_swap xdelta ydelta f a fa b fb c fc mflag d i =
     else
       brent_int xdelta ydelta f a fa b fb c fc mflag d i
 
+fun error_bracket (loc, a, fa, b, fb) =
+  raise Fail (loc ^ ": root must be bracketed:" ^
+              " f(" ^ (Real.toString a) ^ ") = " ^ (Real.toString fa) ^ 
+              " f(" ^ (Real.toString b) ^ ") = " ^ (Real.toString fa))
+        
 fun brent delta f a b =
   let val fa = f a 
       val fb = f b
   in
       if fa * fb >= 0.0
-      then raise Fail "Root must be bracketed"
+      then error_bracket ("RootFind.brent", a, fa, b, fb)
            (* xdelta = ydelta = delta *)
       else brent_int_swap delta delta f a fa b fb a fa true 0.0 1
   end
@@ -110,7 +115,7 @@ fun bisection delta f a b =
       val fb = f b
   in
       if fa * fb >= 0.0
-      then raise Fail "Root must be bracketed"
+      then error_bracket ("RootFind.bisection", a, fa, b, fb)
       else bisect_int delta f a fa b fb
   end
 
@@ -131,7 +136,7 @@ fun secant delta f a b =
       val fb = f b
   in
       if fa * fb >= 0.0
-      then raise Fail "Root must be bracketed"
+      then error_bracket ("RootFind.secant", a, fa, fa, fb)
       else secant_int delta f a fa b fb
   end
 

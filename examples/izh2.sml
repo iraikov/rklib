@@ -62,7 +62,9 @@ fun deriv {theta,k1,k2,k3,a,b,c,d,I}
 fun make_event (params as {theta,k1,k2,k3,a,b,c,d,I})  =
     let open Real 
     in
-        (fn (v,u) => (v - theta),
+        (fn (v,u) =>
+            ((*putStrLn ("make_event: v = " ^ (Real.toString v));*)
+             (v - theta)),
          fn ((v,u),tstep) => 
             let
                 val v' = c
@@ -106,13 +108,13 @@ fun solver (stepper,evtest,hinterp) =
                 (if (evtest (v,u) >= 0.0)
                  then (let
                           val tn      = t+tstep
-                          val finterp = hinterp (tstep, ks, tn, (v,u))
+                          val finterp = hinterp (tstep, ks, t, st)
                           val theta   = RootFind.brent tol (evtest o finterp) 0.0 1.0
                           val st'     = finterp theta
                       in
                           (putStrLn ("# event: theta = " ^ (showReal theta) ^ " tstep = " ^ (showReal tstep));
                            putStrLn ("# event: finterp theta = " ^ (showReal (#1(st'))));
-                           Root (t,st',tstep'))
+                           Root (t+tstep*theta,st',tstep'))
                       end)
                  else Next (t+tstep,(v,u),tstep'))
               | Left tstep'  => 

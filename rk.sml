@@ -50,11 +50,7 @@
 structure RungeKutta =
 struct
 
-exception InsufficientArguments
-exception KsumInsufficientArguments
-exception KsInvalidCoefficients
-exception BkInvalidCoefficients
-exception FSALInvalidCoefficients
+val debug = true
 
 fun putStr str =
     (TextIO.output (TextIO.stdOut, str))
@@ -66,7 +62,7 @@ fun putStrLn str =
 
 fun foldl1 f (a::b::lst) = List.foldl f (f(a,b)) lst
   | foldl1 f (a::[]) = a
-  | foldl1 f _ = raise InsufficientArguments
+  | foldl1 f _ = raise Fail "RungeKutta.foldl1: insufficient arguments"
 
 fun list_show (toString,sep,lb,rb) xs =
     let 
@@ -206,7 +202,7 @@ fun k_sum (sc_fn: real * 'a -> 'a,
                      recur f g (ns, ks, ax')
                  end)
           | recur f g (_, _, SOME ax) = ax
-          | recur f g (_, _, NONE) = raise KsumInsufficientArguments
+          | recur f g (_, _, NONE) = raise Fail "RungeKutta.k_sum: insufficient arguments"
 
 
     in
@@ -227,7 +223,7 @@ fun gen_ks (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
     end
 
   | gen_ks (ksum_fn,sum_fn,der_fn,h,(tn,yn),ks,_,_) =
-    raise KsInvalidCoefficients
+    raise Fail "RungeKutta.gen_ks: invalid coefficients"
     
 (* Helper function for FSAL solvers  *)
 fun gen_ks_fsal (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
@@ -243,7 +239,7 @@ fun gen_ks_fsal (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
          end)
 
   | gen_ks_fsal (ksum_fn,sum_fn,der_fn,h,old,ks,_,_) =
-    raise KsInvalidCoefficients
+    raise Fail "RungeKutta.gen_ks_fsal: invalid coefficients"
     
 
 (*
@@ -349,7 +345,7 @@ fun core2_fsal (cl: real list, al: RCL list, bl: RCL, dl: RCL) =
                  in
                      (sum_fn (yn, ksum (bl, ks)), ksum (dl, ks), List.last ks)
                  end))
-    else raise FSALInvalidCoefficients
+    else raise Fail "RungeKutta.core2_fsal: invalid coefficients"
 
 
 (* Helper function to sum a list of b_i (theta) K_i *)
@@ -359,22 +355,19 @@ fun bk_sum (bs: RCL list)
            (ks: 'a list, h: real)
            (theta: real) = 
     let 
-
         fun recur ((d,ns)::bs, k::ks, fs) =
             let
                 val (bsum,_) = foldl (fn (n,(sum,theta)) => 
-                                         ((n*theta)+sum,theta*theta)) (0.0,theta) ns
+                                         ((n*theta)+sum,theta*theta))
+                                     (0.0,theta) ns
             in
                 case m_scale sc_fn (bsum, k) of 
                     SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
                   | NONE => recur (bs, ks, fs)
             end
+          | recur ([], [], []) = raise Fail "RungeLutta.bk_sum: empty list of function evaluations"
           | recur ([], [], fs) = foldl1 sum_fn fs
-          | recur (bs, ks, fs) = 
-            (putStrLn ("BkInvalidCoefficients: length bs = " ^ (Int.toString (length bs)));
-             putStrLn ("BkInvalidCoefficients: length ks = " ^ (Int.toString (length ks)));
-             putStrLn ("BkInvalidCoefficients: length fs = " ^ (Int.toString (length fs)));
-             raise BkInvalidCoefficients)
+          | recur (bs, ks, fs) = raise Fail "RungeLutta.bk_sum: invalid coefficients"
     in
         recur (bs, ks, [])
     end
@@ -388,8 +381,11 @@ type 'a hinterp = (real * 'a list * real * 'a) ->
 fun hinterp (ws: RCL list,
              sc_fn: real * 'a -> 'a, 
              sum_fn: 'a * 'a -> 'a) =
-     (fn (h: real, ks: 'a list, tn, yn: 'a) =>
-         (fn (theta) => sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)))
+  (fn (h: real, ks: 'a list, tn, yn: 'a) =>
+      fn (theta) =>
+         if theta > 0.0 
+         then sum_fn (yn, bk_sum ws (sc_fn,sum_fn) (ks,h) theta)
+         else yn)
                            
 
 (* Core routine for constructing continuous methods.  It returns a
