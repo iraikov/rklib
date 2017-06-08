@@ -127,11 +127,11 @@ fun solver (stepper,evtest,hinterp) =
 
 val initial = (~65.0,~1.625)
 
-val tstep = 0.5
+val tstep = 0.1
 
 val cerkdp: IzhState stepper3 = make_cerkdp()
 fun make_stepper (params) = cerkdp (scaler,summer,deriv params)
-val hinterp: IzhState hinterp = make_interp_cerkdp (scaler,summer)
+val hinterp: IzhState hinterp = make_interp_cerkdp () (scaler,summer)
 
 fun driver (tmax,stepper,(evtest,evhandle),hinterp) =
   let val solver' = solver (stepper,evtest,hinterp)
