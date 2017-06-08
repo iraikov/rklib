@@ -128,7 +128,7 @@ fun gen_soln3 (integrator,interp,h,t,st) =
   in 
       if t >= 5.0
       then (putStr (showst (tn,stn));
-            putStrLn ("\t" ^ (showReal (interp ks (tn,stn) 1.0))))
+            putStrLn ("\t" ^ (showReal (interp (h,ks,t,st) 1.0))))
       else gen_soln3 (integrator,interp,h,tn,stn)
   end
 
@@ -139,7 +139,7 @@ fun do_case3 integrator interp n =
       val sep = if n <= 4 then "\t\t" else "\t"
   in
       putStr (String.concat [(showReal h), sep]);
-      gen_soln3 (integrator h,interp h,h,t0,y0)
+      gen_soln3 (integrator h,interp,h,t0,y0)
   end
 
 fun solver3 (integrator,interp,stats) =
