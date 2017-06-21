@@ -355,16 +355,17 @@ fun bk_sum (bs: RCL list)
            (ks: 'a list, h: real)
            (theta: real) = 
     let 
+        val thetas = List.tabulate(List.length bs, fn(i) => Real.Math.pow(theta, Real.fromInt (i+1)))
         fun recur ((d,ns)::bs, k::ks, fs) =
-            let
-                val (bsum,_) = foldl (fn (n,(sum,theta)) => 
-                                         ((n*theta)+sum,theta*theta))
-                                     (0.0,theta) ns
-            in
-                case m_scale sc_fn (bsum, k) of 
-                    SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
-                  | NONE => recur (bs, ks, fs)
-            end
+          let
+              val (bsum,_) = foldl (fn (n,(sum,thetas)) => 
+                                       ((n*(List.hd thetas))+sum,List.tl thetas))
+                                   (0.0,thetas) ns
+          in
+              case m_scale sc_fn (bsum, k) of 
+                  SOME bk => recur (bs, ks, (sc_fn (h/d, bk))::fs)
+                | NONE => recur (bs, ks, fs)
+          end
           | recur ([], [], []) = raise Fail "RungeLutta.bk_sum: empty list of function evaluations"
           | recur ([], [], fs) = foldl1 sum_fn fs
           | recur (bs, ks, fs) = raise Fail "RungeLutta.bk_sum: invalid coefficients"
