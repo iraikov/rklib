@@ -122,7 +122,7 @@ val tstep = 0.5
 
 val cerkdp: real stepper3 = make_cerkdp()
 fun make_stepper (params) = cerkdp (scaler,summer,deriv params)
-val hinterp: real hinterp = make_interp_cerkdp (scaler,summer)
+val hinterp: real hinterp = make_interp_cerkdp () (scaler,summer)
 
 fun driver (tmax,stepper,(evtest,evhandle),hinterp) =
   let val solver' = solver (stepper,evtest,hinterp)

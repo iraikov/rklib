@@ -131,7 +131,7 @@ val initial = (~65.0,~13.0)
 val tstep = 0.5
 
 val cerkdp: IzhState stepper3 = make_cerkdp()
-val hinterp: IzhState hinterp = make_interp_cerkdp (scaler,summer)
+val hinterp: IzhState hinterp = make_interp_cerkdp () (scaler,summer)
 fun make_stepper (params) = cerkdp (scaler,summer,deriv params)
 
 
