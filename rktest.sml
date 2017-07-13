@@ -16,12 +16,6 @@ infix //
 
 
 
-(* Solve the test problem dy/dt = -t^3 y^3 
-
-   which has the exact solution y = 1/sqrt(C + t^4/2)
-   where C = 1/y_0^2 - t_0^4/2
-*)
-
 val con = ~0.4
 fun deriv (t,y) = con*y
 val t0 = 0.0
@@ -82,7 +76,7 @@ fun do_case1 integrator n =
 
 fun solver1 (integrator,stats) =
   (putStrLn stats;
-   putStrLn "# step yf err";
+   putStrLn "# step yf delta";
    List.app (do_case1 (integrator (scaler,summer,deriv)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
@@ -109,14 +103,14 @@ fun do_case2_fsal integrator n =
 
 fun solver2 (integrator,stats) =
   (putStrLn stats;
-   putStrLn "# step yf err";
+   putStrLn "# step yf delta";
    List.app (do_case2 (integrator (scaler,summer,deriv)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
 
 fun solver2_fsal (integrator,stats) =
   (putStrLn stats;
-   putStrLn "# step yf err";
+   putStrLn "# step yf delta";
    List.app (do_case2_fsal (integrator (scaler,summer,deriv)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
@@ -144,7 +138,7 @@ fun do_case3 integrator interp n =
 
 fun solver3 (integrator,interp,stats) =
   (putStrLn stats;
-   putStrLn "# step yf err uf";
+   putStrLn "# step yf delta uf";
    List.app (do_case3 (integrator (scaler,summer,deriv)) (interp (scaler,summer)))
 	    (List.tabulate (15, fn x => x - 2));
    putStrLn "# All done!\n")
