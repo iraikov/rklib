@@ -20,7 +20,6 @@ val con = ~0.4
 fun deriv (t,y) = con*y
 val t0 = 0.0
 val y0 = 1.75
-val yp0 = deriv(t0,y0)
 fun exact t = y0*Real.Math.exp(con*(t - t0))
 
 fun putStr str =
@@ -61,7 +60,7 @@ fun gen_soln2_fsal (integrator,h,t,st,k) =
   in 
       if t >= 5.0
       then putStrLn (showst (tn,stn))
-      else gen_soln2_fsal (integrator,h,tn,stn,kn)
+      else gen_soln2_fsal (integrator,h,tn,stn,SOME kn)
   end
 
 fun do_case1 integrator n =
@@ -98,7 +97,7 @@ fun do_case2_fsal integrator n =
       val sep = if n <= 4 then "\t\t" else "\t"
   in
       putStr (String.concat [(showReal h), sep]);
-      gen_soln2_fsal (integrator h,h,t0,y0,yp0)
+      gen_soln2_fsal (integrator h,h,t0,y0,NONE)
   end
 
 fun solver2 (integrator,stats) =

@@ -230,10 +230,10 @@ fun gen_ks_fsal (ksum_fn,sum_fn: 'a * 'a -> 'a,der_fn: real * 'a -> 'a,
 	         h,(tn,yn,ypn),ks,[],[]) = ks
 
   | gen_ks_fsal (ksum_fn,sum_fn,der_fn,h,old as (tn,yn,ypn),ks,(c::cs),(a::ar)) =
-    if (List.null ks)
-    then gen_ks_fsal (ksum_fn, sum_fn, der_fn, h, old, [ypn], cs, ar)
+    if (List.null ks) andalso (isSome ypn)
+    then gen_ks_fsal (ksum_fn, sum_fn, der_fn, h, old, [(valOf ypn)], cs, ar)
     else (let
-             val yn1 = sum_fn (yn, ksum_fn (a,ks))
+             val yn1 = if (List.null ks) then yn else sum_fn (yn, ksum_fn (a,ks))
          in
 	     gen_ks_fsal (ksum_fn, sum_fn, der_fn, h, old, (ks @ [der_fn (tn + c*h, yn1)]), cs, ar)
          end)
@@ -329,7 +329,7 @@ fun core2 (cl: real list, al: RCL list, bl: RCL, dl: RCL)
 type 'a stepper2_fsal =  ((real * 'a -> 'a) * 
 		          ('a * 'a -> 'a)   *
 		          (real * 'a -> 'a)) ->
-		         (real -> (real * 'a * 'a) -> ('a * 'a * 'a))
+		         (real -> (real * 'a * 'a option) -> ('a * 'a * 'a))
 
 fun core2_fsal (cl: real list, al: RCL list, bl: RCL, dl: RCL) =
     if rclEq (bl, List.last al)
@@ -338,7 +338,7 @@ fun core2_fsal (cl: real list, al: RCL list, bl: RCL, dl: RCL) =
 	     sum_fn: 'a * 'a -> 'a,
 	     der_fn: real * 'a -> 'a) =>
             fn (h: real) =>
-               fn (old as (tn,yn: 'a,ypn: 'a)) =>
+               fn (old as (tn,yn: 'a,ypn: 'a option)) =>
                  (let
                      val ksum = k_sum (sc_fn,sum_fn,h)
                      val ks = gen_ks_fsal (ksum, sum_fn, der_fn, h, old, [], cl, al)
